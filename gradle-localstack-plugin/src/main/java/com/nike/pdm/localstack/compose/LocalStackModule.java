@@ -150,12 +150,12 @@ public class LocalStackModule {
 
             // Only configure the localstack-docker-compose.yml by default if the compose file is not already
             // configured via the avast docker compose plugin's extension
-            if (composeExt.getUseComposeFiles() != null && composeExt.getUseComposeFiles().isEmpty()) {
+            if (composeExt.getUseComposeFiles().get() != null && composeExt.getUseComposeFiles().get().isEmpty()) {
                 File composeFile = Paths.get(LocalStackDir.getDirectory(project).getAbsolutePath(), InitLocalStackTask.DEFAULT_LOCALSTACK_DOCKER_COMPOSE_FILE_NAME).toFile();
 
                 // Only set the compose file if this project has already been initialized with initLocalStack
                 if (composeFile.exists()) {
-                    composeExt.setUseComposeFiles(Arrays.asList(composeFile.getAbsolutePath()));
+                    composeExt.getUseComposeFiles().set(Arrays.asList(composeFile.getAbsolutePath()));
                 }
             }
         }

@@ -17,7 +17,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class VersionSanityCheck {
-    private static final String CURRENT_LOCALSTACK_VERSION = "0.12.10";
+    private static final String CURRENT_LOCALSTACK_VERSION = "1.0.4";
 
     @Test
     public void shouldHaveCorrectLocalStackVersion() {

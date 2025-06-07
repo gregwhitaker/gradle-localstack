@@ -9,9 +9,14 @@ package com.nike.pdm.localstack.boot;
 
 import com.nike.pdm.localstack.compose.LocalStackExtension;
 import com.nike.pdm.localstack.compose.LocalStackModule;
+import java.util.concurrent.Callable;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.springframework.boot.gradle.tasks.bundling.BootJar;
 import org.springframework.boot.gradle.tasks.run.BootRun;
 
@@ -48,8 +53,12 @@ public class SpringBootModule {
             BootRun appliedBootRun = (BootRun) project.getTasks().getByName(SPRING_BOOT_PLUGIN_BOOT_RUN_TASK_NAME);
             BootJar appliedBootJar = (BootJar) project.getTasks().getByName(SPRING_BOOT_PLUGIN_BOOT_JAR_TASK_NAME);
 
-            configureBootRunLocal(project, appliedBootRun, appliedBootJar);
-            configureBootRunLocalDebug(project, appliedBootRun, appliedBootJar);
+            try {
+                configureBootRunLocal(project, appliedBootRun, appliedBootJar);
+                configureBootRunLocalDebug(project, appliedBootRun, appliedBootJar);
+            } catch (Throwable t) {
+                throw new GradleException("Error configuring Spring Boot module of the plugin.");
+            }
         }
     }
 
@@ -66,7 +75,11 @@ public class SpringBootModule {
         return SpringBootExtension.DEFAULT_ENABLED;
     }
 
-    private static void configureBootRunLocal(Project project, BootRun appliedBootRun, BootJar appliedBootJar) {
+    private static void configureBootRunLocal(Project project, BootRun appliedBootRun, BootJar appliedBootJar) throws Exception {
+        final Callable<FileCollection> callableClasspath = () -> sourceSets(project).getByName(SourceSet.MAIN_SOURCE_SET_NAME).getRuntimeClasspath();
+        final TaskProvider<ResolveMainClassName> resolveProvider = ResolveMainClassName.registerForTask(BOOT_RUN_LOCAL_TASK_NAME, project, callableClasspath);
+        final FileCollection classpath = callableClasspath.call();
+
         project.getTasks().create(BOOT_RUN_LOCAL_TASK_NAME, BootRun.class, bootRun -> {
             LocalStackExtension ext = project.getExtensions().getByType(LocalStackExtension.class);
 
@@ -74,8 +87,8 @@ public class SpringBootModule {
             bootRun.setDescription("Runs the application locally and connects to mock AWS endpoints using LocalStack.");
             bootRun.getDependsOn().add(LocalStackModule.START_LOCALSTACK_TASK_NAME);
             bootRun.setMustRunAfter(Arrays.asList(LocalStackModule.START_LOCALSTACK_TASK_NAME));
-            bootRun.setClasspath(javaPluginConvention(project).getSourceSets().findByName(SourceSet.MAIN_SOURCE_SET_NAME).getRuntimeClasspath());
-            bootRun.conventionMapping("main", new MainClassConvention(project, appliedBootJar::getClasspath));
+            bootRun.setClasspath(classpath);
+            bootRun.getMainClass().convention(resolveProvider.flatMap(ResolveMainClassName::readMainClassName));
 
             List<String> jvmArgs;
             if (appliedBootRun.getJvmArgs() != null) {
@@ -94,7 +107,12 @@ public class SpringBootModule {
         });
     }
 
-    private static void configureBootRunLocalDebug(Project project, BootRun appliedBootRun, BootJar appliedBootJar) {
+    private static void configureBootRunLocalDebug(Project project, BootRun appliedBootRun, BootJar appliedBootJar) throws Exception {
+        final Callable<FileCollection> callableClasspath = () -> sourceSets(project).getByName(SourceSet.MAIN_SOURCE_SET_NAME).getRuntimeClasspath();
+        final TaskProvider<ResolveMainClassName> resolveProvider = ResolveMainClassName.registerForTask(BOOT_RUN_LOCAL_DEBUG_TASK_NAME,
+            project, callableClasspath);
+        final FileCollection classpath = callableClasspath.call();
+
         project.getTasks().create(BOOT_RUN_LOCAL_DEBUG_TASK_NAME, BootRun.class, bootRun -> {
             LocalStackExtension ext = project.getExtensions().getByType(LocalStackExtension.class);
 
@@ -102,8 +120,8 @@ public class SpringBootModule {
             bootRun.setDescription("Runs the application locally (with debugger) and connects to mock AWS endpoints using LocalStack.");
             bootRun.getDependsOn().add(LocalStackModule.START_LOCALSTACK_TASK_NAME);
             bootRun.setMustRunAfter(Arrays.asList(LocalStackModule.START_LOCALSTACK_TASK_NAME));
-            bootRun.conventionMapping("main", new MainClassConvention(project, appliedBootJar::getClasspath));
-            bootRun.setClasspath(javaPluginConvention(project).getSourceSets().findByName(SourceSet.MAIN_SOURCE_SET_NAME).getRuntimeClasspath());
+            bootRun.setClasspath(classpath);
+            bootRun.getMainClass().convention(resolveProvider.flatMap(ResolveMainClassName::readMainClassName));
 
             List<String> jvmArgs;
             if (appliedBootRun.getJvmArgs() != null) {
@@ -129,6 +147,11 @@ public class SpringBootModule {
         return project.getConvention().getPlugin(JavaPluginConvention.class);
     }
 
+    @SuppressWarnings("deprecation")
+    private static SourceSetContainer sourceSets(Project project) {
+        return javaPluginConvention(project).getSourceSets();
+    }
+
     private static void applySpringBootProfilesJvmArgument(LocalStackExtension ext, List<String> jvmArgs) {
         if (ext.getSpringboot() != null) {
             // If the profiles value is supplied and empty then we don't set the profiles jvm argument
@@ -136,7 +159,7 @@ public class SpringBootModule {
                 jvmArgs.add(String.format(BOOT_PROFILES_ARG_FORMAT, String.join(",", ext.getSpringboot().getProfiles())));
             }
         } else {
-            jvmArgs.add(String.format(BOOT_PROFILES_ARG_FORMAT, SpringBootExtension.DEFAULT_PROFILES));
+            jvmArgs.add(String.format(BOOT_PROFILES_ARG_FORMAT, String.join(",", SpringBootExtension.DEFAULT_PROFILES)));
         }
     }
 }

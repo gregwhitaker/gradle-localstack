@@ -1,12 +1,13 @@
 /**
  * Copyright 2020-present, Nike, Inc.
  * All rights reserved.
- *
+ * <p>
  * This source code is licensed under the Apache-2.0 license found in
  * the LICENSE file in the root directory of this source tree.
  */
 package com.nike.pdm.localstack.aws;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
@@ -56,8 +57,9 @@ public final class AwsClientFactory {
                     project.getLogger().debug("Creating new aws cloudformation client");
 
                     cfClient = ref = AmazonCloudFormationClientBuilder.standard()
-                            .withEndpointConfiguration(endpointConfiguration(project))
-                            .build();
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .withEndpointConfiguration(endpointConfiguration(project))
+                        .build();
                 }
             }
         }
@@ -80,8 +82,9 @@ public final class AwsClientFactory {
                     project.getLogger().debug("Creating new aws dynamodb client");
 
                     dynamoDbClient = ref = AmazonDynamoDBClientBuilder.standard()
-                            .withEndpointConfiguration(endpointConfiguration(project))
-                            .build();
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .withEndpointConfiguration(endpointConfiguration(project))
+                        .build();
                 }
             }
         }
@@ -104,9 +107,10 @@ public final class AwsClientFactory {
                     project.getLogger().debug("Creating new aws s3 client");
 
                     amazonS3Client = ref = AmazonS3ClientBuilder.standard()
-                            .withEndpointConfiguration(endpointConfiguration(project))
-                            .withPathStyleAccessEnabled(true)
-                            .build();
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .withEndpointConfiguration(endpointConfiguration(project))
+                        .withPathStyleAccessEnabled(true)
+                        .build();
                 }
             }
         }
@@ -129,8 +133,9 @@ public final class AwsClientFactory {
                     project.getLogger().debug("Creating new aws sqs client");
 
                     amazonSqsClient = ref = AmazonSQSClientBuilder.standard()
-                            .withEndpointConfiguration(endpointConfiguration(project))
-                            .build();
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .withEndpointConfiguration(endpointConfiguration(project))
+                        .build();
                 }
             }
         }
@@ -153,8 +158,9 @@ public final class AwsClientFactory {
                     project.getLogger().debug("Creating new aws sns client");
 
                     amazonSnsClient = ref = AmazonSNSClientBuilder.standard()
-                            .withEndpointConfiguration(endpointConfiguration(project))
-                            .build();
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .withEndpointConfiguration(endpointConfiguration(project))
+                        .build();
                 }
             }
         }
@@ -164,6 +170,8 @@ public final class AwsClientFactory {
 
     private AwsClientBuilder.EndpointConfiguration endpointConfiguration(Project project) {
         LocalStackExtension ext = project.getExtensions().findByType(LocalStackExtension.class);
-        return new AwsClientBuilder.EndpointConfiguration(String.format("http://%s:%s", ext.getHost(), ext.getPort()), ext.getSigningRegion());
+        return new AwsClientBuilder.EndpointConfiguration(
+            String.format("http://%s:%s", ext.getHost(), ext.getPort()),
+            ext.getSigningRegion());
     }
 }

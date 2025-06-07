@@ -26,9 +26,9 @@ public class LocalStackExtension {
     private static final String DEFAULT_SIGNING_REGION = "us-east-1";
 
     private File workingDir;
-    private String host = DEFAULT_HOST;
-    private int port = DEFAULT_PORT;
-    private String signingRegion = DEFAULT_SIGNING_REGION;
+    private String host = null;
+    private Integer port = null;
+    private String signingRegion = null;
     private SpringBootExtension springboot;
 
     /**
@@ -55,7 +55,11 @@ public class LocalStackExtension {
      * @return localstack hostname
      */
     public String getHost() {
-        return host;
+        if (host == null) {
+            return DEFAULT_HOST;
+        } else {
+            return host;
+        }
     }
 
     /**
@@ -73,7 +77,11 @@ public class LocalStackExtension {
      * @return localstack edge services port
      */
     public int getPort() {
-        return port;
+        if (port == null) {
+            return DEFAULT_PORT;
+        } else {
+            return port;
+        }
     }
 
     /**
@@ -91,7 +99,11 @@ public class LocalStackExtension {
      * @return default localstack AWS signing region
      */
     public String getSigningRegion() {
-        return signingRegion;
+        if (signingRegion == null) {
+            return DEFAULT_SIGNING_REGION;
+        } else {
+            return signingRegion;
+        }
     }
 
     /**

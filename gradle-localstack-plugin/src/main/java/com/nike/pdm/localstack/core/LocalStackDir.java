@@ -45,9 +45,11 @@ public class LocalStackDir {
             final Object extObj = project.getExtensions().findByName("dockerCompose");
             if (extObj instanceof ComposeExtension) {
                 final ComposeExtension dockerCompose = (ComposeExtension) extObj;
-                if (dockerCompose.getDockerComposeWorkingDirectory() != null && !dockerCompose.getDockerComposeWorkingDirectory().isEmpty()) {
+
+
+                if (dockerCompose.getDockerComposeWorkingDirectory() != null) {
                     project.getLogger().debug("Getting LocalStack directory from Docker Compose plugin: " + dockerCompose.getDockerComposeWorkingDirectory());
-                    return Paths.get(dockerCompose.getDockerComposeWorkingDirectory()).toFile();
+                    return dockerCompose.getDockerComposeWorkingDirectory().get().getAsFile();
                 }
             }
         }

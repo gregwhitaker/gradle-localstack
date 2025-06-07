@@ -1,15 +1,16 @@
-version: '3.5'
+version: '3.8'
 
 services:
   localstack:
-    image: localstack/localstack:0.12.10
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: localstack/localstack
     ports:
-      - '4566:4566'   # LocalStack Edge
+      - "127.0.0.1:4566:4566"
     environment:
-      - DEBUG=1
+      - DEBUG=${DEBUG:-0}
       - DATA_DIR=/tmp/localstack/data
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_ACCESS_KEY_ID=LSIAQAAAAAAVNCBMPNSG
+      - AWS_SECRET_ACCESS_KEY=LSIAQAAAAAAVNCBMPNSG
     volumes:
-      - './.localstack:/tmp/localstack'
+      - "${LOCALSTACK_VOLUME_DIR:-./.localstack}:/var/lib/localstack"
       - '/var/run/docker.sock:/var/run/docker.sock'

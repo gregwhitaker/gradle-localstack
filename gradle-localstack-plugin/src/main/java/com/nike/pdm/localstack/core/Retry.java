@@ -10,6 +10,7 @@ package com.nike.pdm.localstack.core;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Wrapper function that retries, with exponential backoff, in the event of an exception.
@@ -82,7 +83,7 @@ public final class Retry {
     }
 
     private static void handleException(int attempt, Throwable t, Collection<Class<? extends Throwable>> expectedErrors) {
-        ConsoleLogger.log("Error: %s", t.getMessage());
+        ConsoleLogger.log("Error: %s", t.getMessage(), ExceptionUtils.getStackTrace(t));
 
         if (expectedErrors.contains(t.getClass()) || (t.getCause() != null && expectedErrors.contains(t.getCause().getClass()))) {
             throw new RuntimeException(t);
